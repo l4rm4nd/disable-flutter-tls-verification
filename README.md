@@ -7,14 +7,18 @@ You can use it via Frida by downloading disable-flutter-tls.js or by using Frida
 
 ```bash
 # new offsets found and verified by GLM-5.3 LLM
-frida -U -f your.package.name -l disable-flutter-tls-v2.js --no-pause
+frida -U -f your.package.name -l disable-flutter-tls-v2.js
 
 # new offsets for Android (arm64) and iOS (arm64) found manually
-frida -U -f your.package.name -l disable-flutter-tls-v1.js --no-pause
+frida -U -f your.package.name -l disable-flutter-tls-v1.js
 
 # or Frida codeshare
 frida -U --codeshare l4rm4nd/disable-flutter-tls-v2 -f YOUR_BINARY
 frida -U --codeshare l4rm4nd/disable-flutter-tls-v1 -f YOUR_BINARY
+
+# on iOS you may want to use a combination to make MitM proxying work
+# make sure to set your proxy ip in force-ios-flutter-proxy.js
+frida -U -f your.package.name -l disable-flutter-tls-v2.js -l force-ios-flutter-proxy.js
 ```
 
 Further information can be found in [this blogpost](https://blog.nviso.eu/2022/08/18/intercept-flutter-traffic-on-ios-and-android-http-https-dio-pinning/).
