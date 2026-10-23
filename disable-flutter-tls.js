@@ -2,7 +2,7 @@
 
 A Frida script that disables Flutter's TLS verification
 
-This script works on Android x86, Android x64 and iOS x64. It uses pattern matching to find [ssl_verify_peer_cert in handshake.cc](https://github.com/google/boringssl/blob/master/ssl/handshake.cc#L323)
+This script works on Android (arm, arm64, x64 and x86), iOS (arm64), Windows and Linux (x64). It uses pattern matching to find [ssl_verify_peer_cert in handshake.cc](https://github.com/google/boringssl/blob/master/ssl/handshake.cc#L323)
 
 If the script doesn't work, take a look at https://github.com/NVISOsecurity/disable-flutter-tls-verification#warning-what-if-this-script-doesnt-work 
 
@@ -21,10 +21,13 @@ var config = {
                     retval: 0
                 },
                 // Flutter MD5 b856cda3660059680a0e1ebd675ea8aa; verified offset 0x460264
+                // Also matches Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x46425c
+                // The immediate of the last instruction (LDR X8, [X19, #imm]) is wildcarded because
+                // the SSL_HANDSHAKE config offset drifted from 0x800 to 0x838 between these builds
                 {
-                    pattern: "FF 43 01 D1 F8 5F 01 A9 F6 57 02 A9 F4 4F 03 A9 FD 7B 04 A9 FD 03 01 91 F3 03 00 AA 14 00 40 F9 88 1A 40 F9 15 E9 40 F9 D5 01 00 B4 68 02 44 F9",
+                    pattern: "FF 43 01 D1 F8 5F 01 A9 F6 57 02 A9 F4 4F 03 A9 FD 7B 04 A9 FD 03 01 91 F3 03 00 AA 14 00 40 F9 88 1A 40 F9 15 E9 40 F9 D5 01 00 B4 68 ?? 44 F9",
                     retval: 0
-                },                
+                }, 
                 {
                     pattern: "FF 83 01 D1 FA 67 01 A9 F8 5F 02 A9 F6 57 03 A9 F4 4F 04 A9 FD 7B 05 A9 FD 43 01 91 F? 03 00 AA ?? 0? 40 F? ?8 ?? 40 F9 ?? ?? 4? F9 ?? 00 00",
                     retval: 0
@@ -58,11 +61,39 @@ var config = {
                     pattern: "FF ?3 01 D1 F? ?? 01 A9 ?? ?? ?? 94 ?? ?? ?? 52 48 00 00 39 1A 50 40 F9 DA 02 00 B4 48 03 40 F9",
                     retval: 1
                 },
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x773354
+                // Built with NDK r28c, which enables LLVM machine outlining: the classic STP prologue
+                // is extracted into an outlined function called via BL.
+                // PACIBSP; BL OUTLINED_FUNCTION; LDR X19, [X0]; MOV X20, X0; LDR X8, [X19, #0x30]; LDR X21, [X8, #0x1d0]
+                // Also matches samples d6aab0f6514f65c29554dd8577a3aa05 (offset 0x7306ec)
+                // and 56fc52b756b30fe847b70f096694b369 (offset 0x70aaf0)
+                {
+                    pattern: "F? 0F 1C F8 ?? ?? ?? 94 13 00 40 F9 F4 03 00 AA 68 1A 40 F9 15 E9 40 F9",
+                    retval: 0
+                },
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x781690
+                // This one matches ssl_crypto_x509_session_verify_cert_chain (bool, 1 = verified) instead of
+                // ssl_verify_peer_cert (ssl_verify_result_t, 0 = ok), so it needs retval: 1
+                // SUB SP, SP, #0x70; STP X29, X30, [SP, #0x10]; BL OUTLINED_FUNCTION; LDRB W8, [X0, #0x1b0]; CBZ W8
+                {
+                    pattern: "FF ?3 01 D1 F? 7B 01 A9 ?? ?? ?? 94 08 C0 46 39 C8 00 00 34",
+                    retval: 1
+                },
             ],
             "arm": [{
-                pattern: "2D E9 F? 4? D0 F8 00 80 81 46 D8 F8 18 00 D0 F8",
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x55c010
+                // MOV r9, r0 (81 46) became MOV r10, r0 (82 46), so the register nibble is wildcarded
+                pattern: "2D E9 F? 4? D0 F8 00 80 8? 46 D8 F8 18 00 D0 F8",
                 retval: 0
-            }, ],
+            },
+            // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x568244
+            // This one matches ssl_crypto_x509_session_verify_cert_chain (bool, 1 = verified) instead of
+            // ssl_verify_peer_cert (ssl_verify_result_t, 0 = ok), so it needs retval: 1
+            // PUSH {r4-r11, lr}; SUB SP, #0x14; MOV r6, r0; LDRB.W r0, [r0, #0x154]; CBZ r0
+            {
+                pattern: "2D E9 F? 4? 85 B0 06 46 90 F8 54 01 20 B1",
+                retval: 1
+            }],
             "x64": [
                 // Flutter engine a804b261645ef8c13eb3d5c44a5c2fb0340c5539
                 // (Build ID 132bfb8e399a170c02e5f577474dd0eed81ed2c3)
@@ -81,12 +112,45 @@ var config = {
                 {
                     pattern: "55 41 57 41 56 41 55 41 54 53 48 83 EC 18 49 89 FE 4C 8B 27 49 8B 44 24 30 48 8B 98 D0 01 00 00 48 85 DB",
                     retval: 0
+                },
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x84af03
+                // PUSH RBP; PUSH R15; PUSH R14; PUSH R13; PUSH R12; PUSH RBX; PUSH RAX;
+                // MOV R14, RDI; MOV RBX, [RDI]; MOV RAX, [RBX+0x30]; MOV R15, [RAX+0x1d0]; TEST R15, R15; JE
+                {
+                    pattern: "55 41 57 41 56 41 55 41 54 53 50 49 89 FE 48 8B 1F 48 8B 43 30 4C 8B B8 D0 01 00 00 4D 85 FF 74",
+                    retval: 0
+                },
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x85d73d
+                // This one matches ssl_crypto_x509_session_verify_cert_chain (bool, 1 = verified) instead of
+                // ssl_verify_peer_cert (ssl_verify_result_t, 0 = ok), so it needs retval: 1
+                // PUSH RBP; R15; R14; R13; R12; RBX; SUB RSP, 0x38; CMP byte ptr [RDI+0x1b0], 0; JE
+                {
+                    pattern: "55 41 57 41 56 41 55 41 54 53 48 83 EC 38 80 BF B0 01 00 00 00 74",
+                    retval: 1
                 }
             ],
             "x86": [{
                 pattern: "55 89 E5 53 57 56 83 E4 F0 83 EC 20 E8 00 00 00 00 5B 81 C3 2B 79 66 00 8B 7D 08 8B 17 8B 42 18 8B 80 88 01",
                 retval: 0
-            }]
+            }],
+            "riscv64": [
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x66e256
+                // Also built with NDK r28c machine outlining: the register-save prologue is an outlined
+                // function called via AUIPC/JALR (both call-target immediates wildcarded, opcodes kept).
+                // ADDI SP, SP, -0x50; AUIPC/JALR; MV S0, A0; LD S2, 0x0(A0); LD A0, 0x30(S2); LD S3, 0x1D0(A0); BEQZ S3
+                {
+                    pattern: "5D 71 97 ?? ?? ?? E7 ?? ?? ?? 2A 84 03 39 05 00 03 35 09 03 83 39 05 1D 63 8C 09 04",
+                    retval: 0
+                },
+                // Flutter 3.47.8 (engine cf636b1dfb818dd6a3ff16e390e93b1a036969c8); verified offset 0x67b3d8
+                // This one matches ssl_crypto_x509_session_verify_cert_chain (bool, 1 = verified) instead of
+                // ssl_verify_peer_cert (ssl_verify_result_t, 0 = ok), so it needs retval: 1
+                // ADDI SP, SP, -0x70; AUIPC/JALR (outlined prologue); SD S11, 0x8(SP); MV S0, A0; LBU A0, 0x1B0(A0); BEQZ A0
+                {
+                    pattern: "59 71 97 ?? ?? ?? E7 ?? ?? ?? 6E E4 2A 84 03 45 05 1B 09 C9",
+                    retval: 1
+                }
+            ]
 
         }
     },
@@ -118,7 +182,7 @@ var config = {
     }
 };
 
-console.log("[+] Pattern version: October 19 2026")
+console.log("[+] Pattern version: October 23 2026")
 console.log("[+] Arch:", Process.arch)
 console.log("[+] Platform: ", Process.platform)
 // Flag to check if TLS validation has already been disabled
