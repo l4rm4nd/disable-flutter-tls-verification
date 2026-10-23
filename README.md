@@ -6,11 +6,15 @@ This script works on Android (arm, arm64, x64 and x86), iOS (arm64), Windows and
 You can use it via Frida by downloading disable-flutter-tls.js or by using Frida codeshare:
 
 ```bash
+# new offsets found and verified by GLM-5.3 LLM
 frida -U -f your.package.name -l disable-flutter-tls-v2.js --no-pause
 
-# or Frida codeshare
+# new offsets for Android (arm64) and iOS (arm64) found manually
+frida -U -f your.package.name -l disable-flutter-tls-v1.js --no-pause
 
+# or Frida codeshare
 frida -U --codeshare l4rm4nd/disable-flutter-tls-v2 -f YOUR_BINARY
+frida -U --codeshare l4rm4nd/disable-flutter-tls-v1 -f YOUR_BINARY
 ```
 
 Further information can be found in [this blogpost](https://blog.nviso.eu/2022/08/18/intercept-flutter-traffic-on-ios-and-android-http-https-dio-pinning/).
