@@ -56,5 +56,4 @@ Before creating a GitHub issue, please test the following steps:
     * For iOS: Extract an *unencrypted* IPA, unzip it and run `md5sum` on `Payload/Runner.app/Frameworks/Flutter.framework/Flutter`
     * Alternatively, copy `libflutter.so` or `Flutter` to the correct folder in `libflutter_samples` and run `python3 verify.py`
 
-If you can succesfully intercept all requests from the demo app and your library is not included in the samples, please [open a GitHub issue](https://github.com/NVISOsecurity/disable-flutter-tls-verification/issues) with the app in question. It is possible that the app is using additional SSL pinning plugins, so a combination of this plugin and objection / other Frida scripts may be necessary. This is outside of the scope of this project and you will have to RE yourself to identify additional pinning protections.
-
+If you can succesfully intercept all requests from the demo app and your library is not included in the samples, please [open a GitHub issue](https://github.com/l4rm4nd/disable-flutter-tls-verification/issues) with the app in question. It is possible that the app is using additional SSL pinning plugins, so a combination of this plugin and objection / other Frida scripts may be necessary. This is outside of the scope of this project and you will have to RE yourself to identify additional pinning protections.
