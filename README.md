@@ -6,7 +6,7 @@ This script works on Android (arm, arm64, x64 and x86), iOS (arm64), Windows and
 You can use it via Frida by downloading disable-flutter-tls.js or by using Frida codeshare:
 
 ```bash
-frida -U -f your.package.name -l disable-flutter-tls.js --no-pause
+frida -U -f your.package.name -l disable-flutter-tls-v2.js --no-pause
 
 # or Frida codeshare
 
