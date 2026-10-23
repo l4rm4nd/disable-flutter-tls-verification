@@ -10,7 +10,7 @@ frida -U -f your.package.name -l disable-flutter-tls.js --no-pause
 
 # or Frida codeshare
 
-frida -U --codeshare TheDauntless/disable-flutter-tls-v1 -f YOUR_BINARY
+frida -U --codeshare l4rm4nd/disable-flutter-tls-v2 -f YOUR_BINARY
 ```
 
 Further information can be found in [this blogpost](https://blog.nviso.eu/2022/08/18/intercept-flutter-traffic-on-ios-and-android-http-https-dio-pinning/).
