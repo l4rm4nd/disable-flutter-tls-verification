@@ -21,7 +21,7 @@ frida -U --codeshare l4rm4nd/disable-flutter-tls-v1 -f YOUR_BINARY
 frida -U -f your.package.name -l disable-flutter-tls-v2.js -l force-ios-flutter-proxy.js
 ```
 
-Further information can be found in [this blogpost](https://blog.nviso.eu/2022/08/18/intercept-flutter-traffic-on-ios-and-android-http-https-dio-pinning/).
+Further information can be found in [this blogpost](https://blog.lrvt.de/intercepting-flutter-traffic-using-frida-and-proxy-tricks/) and [this one](https://blog.nviso.eu/2022/08/18/intercept-flutter-traffic-on-ios-and-android-http-https-dio-pinning/).
 
 ## Pattern coverage
 
